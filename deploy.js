@@ -1,13 +1,15 @@
 const ethers = require("ethers")
 // const solc = require("solc")
 const fs = require("fs-extra")
+require("dotenv").config()
 
 async function main() {
     // First, compile this!
     // And make sure to have your ganache network up!
-    // Make sure to change the server in Ganache settings to reflect WSL, otherwise the network error will occur. 
-    let provider = new ethers.providers.JsonRpcProvider("http://172.24.0.1:7545");
-    let wallet = new ethers.Wallet("6bf7ee8bf2f2ed6187f3256cf6179b3dd302087e8423f581d27ebc4d78ccfdb2", provider);
+    // Use Alchemy to spin up a server to get the rpc url 
+    let provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
+    // this is the private key from metamask wallet
+    let wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     // const encryptedJson = fs.readFileSync("./.encryptedKey.json", "utf8");
     // let wallet = new ethers.Wallet.fromEncryptedJsonSync(
     //   encryptedJson,
@@ -22,6 +24,14 @@ async function main() {
     const contractFactory = new ethers.ContractFactory(abi, binary, wallet)
     console.log("Deploying, please wait...")
     const contract = await contractFactory.deploy();
+
+    let currentFavoriteNumber = await contract.retrieve()
+    console.log(`Current Favorite Number: ${currentFavoriteNumber}`)
+    console.log("Updating favorite number...")
+    let transactionResponse = await contract.store(7)
+    let transactionReceipt = await transactionResponse.wait()
+    currentFavoriteNumber = await contract.retrieve()
+    console.log(`New Favorite Number: ${currentFavoriteNumber}`)
 }
 
 main()
